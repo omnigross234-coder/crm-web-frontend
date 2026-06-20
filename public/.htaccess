@@ -1,0 +1,20 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /crm_web/
+
+# Let Apache serve real exported files and folders first.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Next static export only has a placeholder for dynamic lead routes.
+# Reuse it for real lead IDs created after build time, including RSC payloads.
+RewriteRule ^leads/([^/]+)/edit/?$ leads/placeholder/edit/index.html [L]
+RewriteRule ^leads/([^/]+)/edit/index\.txt$ leads/placeholder/edit/index.txt [L]
+RewriteRule ^leads/([^/]+)/edit\.txt$ leads/placeholder/edit/index.txt [L]
+RewriteRule ^leads/([^/]+)/edit/(__next\..*)$ leads/placeholder/edit/$2 [L]
+
+RewriteRule ^leads/([^/]+)/?$ leads/placeholder/index.html [L]
+RewriteRule ^leads/([^/]+)/index\.txt$ leads/placeholder/index.txt [L]
+RewriteRule ^leads/([^/]+)\.txt$ leads/placeholder/index.txt [L]
+RewriteRule ^leads/([^/]+)/(__next\..*)$ leads/placeholder/$2 [L]

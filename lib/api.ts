@@ -5,15 +5,30 @@ function getToken(): string | null {
   return localStorage.getItem("crm_token");
 }
 
-function getErrorMessage(json: { message?: string; data?: unknown }, fallback: string) {
-  if (json.data && typeof json.data === "object") {
-    const errors = Object.values(json.data as Record<string, unknown>);
+function getErrorMessage(json: unknown, fallback: string) {
+  if (!json || typeof json !== "object") return fallback;
+
+  const body = json as { message?: unknown; data?: unknown };
+
+  if (body.data && typeof body.data === "object") {
+    const errors = Object.values(body.data as Record<string, unknown>);
     const first = errors[0];
     if (Array.isArray(first) && typeof first[0] === "string") return first[0];
     if (typeof first === "string") return first;
   }
 
-  return json.message ?? fallback;
+  return typeof body.message === "string" ? body.message : fallback;
+}
+
+async function parseResponseBody(res: Response): Promise<unknown> {
+  const text = await res.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 async function request<T>(
@@ -29,12 +44,18 @@ async function request<T>(
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
-  const json = await res.json();
+  const body = await parseResponseBody(res);
 
   if (!res.ok) {
-    throw new Error(getErrorMessage(json, `Request failed: ${res.status}`));
+    const statusText = res.statusText ? ` ${res.statusText}` : "";
+    const fallback =
+      typeof body === "string" && body.trim()
+        ? body
+        : `Request failed: ${res.status}${statusText}`;
+
+    throw new Error(getErrorMessage(body, fallback));
   }
-  return json as T;
+  return body as T;
 }
 
 export const api = {

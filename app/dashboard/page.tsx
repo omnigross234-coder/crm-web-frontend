@@ -5,7 +5,6 @@ import { FaArrowRight } from "react-icons/fa";
 import Layout from "@/components/Layout";
 import { api, DashboardStats, ApiResponse, Lead, PaginatedLeads } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import BackupPanel from "@/components/BackupPanel"
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-[#dbeafe] text-[#1d4ed8]",
@@ -206,8 +205,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-
-            <BackupPanel />
           </>
         )}
       </div>

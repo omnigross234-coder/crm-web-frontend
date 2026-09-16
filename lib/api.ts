@@ -228,3 +228,21 @@ export interface TenantDetail {
     per_tenant_backups_supported: boolean;
   };
 }
+
+// Phase 6 (Super Admin User Management Control Center).
+export type PlatformRole = "super_admin" | "client_admin" | "admin" | "sales" | "sales_employee" | "sales_manager";
+
+export interface PlatformUserListRow {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: PlatformRole;
+  status: "active" | "inactive";
+  client_id: number | null;
+  client: { id: number; name: string; status: string } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PlatformUserDetail = PlatformUserListRow;

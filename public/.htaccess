@@ -25,3 +25,10 @@ RewriteRule ^admin/clients/([^/]+)/?$ admin/clients/placeholder/index.html [L]
 RewriteRule ^admin/clients/([^/]+)/index\.txt$ admin/clients/placeholder/index.txt [L]
 RewriteRule ^admin/clients/([^/]+)\.txt$ admin/clients/placeholder/index.txt [L]
 RewriteRule ^admin/clients/([^/]+)/(__next\..*)$ admin/clients/placeholder/$2 [L]
+
+# Phase 6 (Super Admin User Management): same placeholder pattern, for the
+# platform user detail route.
+RewriteRule ^admin/platform/users/([^/]+)/?$ admin/platform/users/placeholder/index.html [L]
+RewriteRule ^admin/platform/users/([^/]+)/index\.txt$ admin/platform/users/placeholder/index.txt [L]
+RewriteRule ^admin/platform/users/([^/]+)\.txt$ admin/platform/users/placeholder/index.txt [L]
+RewriteRule ^admin/platform/users/([^/]+)/(__next\..*)$ admin/platform/users/placeholder/$2 [L]

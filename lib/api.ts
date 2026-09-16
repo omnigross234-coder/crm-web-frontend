@@ -163,3 +163,68 @@ export interface CallReportResponse {
   summary: ExecutiveSummary[];
   logs: CallLog[];
 }
+
+// Phase 5 (Client / Tenant Management Control Center).
+export interface TenantSubscriptionSummary {
+  status: string;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+  plan: { id: number; name: string; price: string | number; billing_cycle: string } | null;
+}
+
+export interface TenantListRow {
+  id: number;
+  name: string;
+  slug: string;
+  status: "active" | "suspended";
+  created_at: string;
+  users_count: number;
+  leads_count: number;
+  latest_lead_at: string | null;
+  admin: { name: string; email: string } | null;
+  subscription: TenantSubscriptionSummary | null;
+}
+
+export interface TenantDetail {
+  client: TenantListRow;
+  admin: { id: number; name: string; email: string } | null;
+  users: {
+    total: number;
+    active: number;
+    inactive: number;
+    by_role: Record<string, number>;
+  };
+  crm: {
+    leads_count: number;
+    recent_leads: { id: number; name: string; status: string; source: string; created_at: string }[];
+    calls_last_30d: number;
+    followups_last_30d: number;
+  };
+  billing: {
+    active_subscription: {
+      id: number;
+      status: string;
+      trial_ends_at: string | null;
+      current_period_end: string | null;
+      plan: { id: number; name: string; price: string | number; billing_cycle: string } | null;
+    } | null;
+    latest_subscription: {
+      id: number;
+      status: string;
+      current_period_end: string | null;
+      plan: { id: number; name: string } | null;
+    } | null;
+    recent_payments: {
+      id: number;
+      subscription_id: number;
+      gateway: string;
+      amount: string | number;
+      status: string;
+      paid_at: string | null;
+      created_at: string;
+    }[];
+  };
+  operations: {
+    per_tenant_backups_supported: boolean;
+  };
+}

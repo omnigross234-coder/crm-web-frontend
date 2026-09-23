@@ -22,13 +22,18 @@ export interface LeadFieldSetting {
 }
 
 interface LeadFieldSettingResponse {
-  field_key: LeadExtraFieldKey;
-  label: string;
+  key?: LeadExtraFieldKey;
+  field_key?: LeadExtraFieldKey;
+  label?: string;
+  type?: LeadExtraFieldType;
   field_type?: LeadExtraFieldType;
-  active: boolean;
-  required: boolean;
+  active?: boolean | number;
+  is_active?: boolean | number;
+  required?: boolean | number;
+  is_required?: boolean | number;
+  isCustom?: boolean;
   is_custom?: boolean;
-  sort_order: number;
+  sort_order?: number;
 }
 
 export const LEAD_EXTRA_FIELDS: LeadExtraFieldDefinition[] = [
@@ -103,39 +108,103 @@ export function saveLeadFieldSettings(settings: LeadFieldSetting[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-function fromApi(settings: LeadFieldSettingResponse[]): LeadFieldSetting[] {
-  return settings.map((setting) => ({
-    key: setting.field_key,
-    label: setting.label,
-    type: setting.field_type ?? "text",
-    active: setting.active,
-    required: setting.required,
-    isCustom: setting.is_custom,
+export function clearLeadFieldSettings() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+type LeadFieldSettingsData =
+  | LeadFieldSettingResponse[]
+  | { fields?: LeadFieldSettingResponse[]; settings?: LeadFieldSettingResponse[] }
+  | null
+  | undefined;
+
+function responseSettings(data: LeadFieldSettingsData): LeadFieldSettingResponse[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.fields)) return data.fields;
+  if (Array.isArray(data?.settings)) return data.settings;
+  return [];
+}
+
+function apiBoolean(value: boolean | number | undefined, fallback: boolean): boolean {
+  if (value === undefined) return fallback;
+  return value === true || value === 1;
+}
+
+function fromApi(settings: LeadFieldSettingResponse[] | null | undefined): LeadFieldSetting[] {
+  if (!Array.isArray(settings)) return [];
+
+  return settings.filter((setting) => Boolean(setting.key ?? setting.field_key)).map((setting) => ({
+    key: (setting.key ?? setting.field_key) as LeadExtraFieldKey,
+    label: setting.label ?? setting.key ?? setting.field_key ?? "Field",
+    type: setting.type ?? setting.field_type ?? "text",
+    active: apiBoolean(setting.active ?? setting.is_active, true),
+    required: apiBoolean(setting.required ?? setting.is_required, false),
+    isCustom: setting.isCustom ?? setting.is_custom,
   }));
 }
 
 export async function fetchLeadFieldSettings(): Promise<LeadFieldSetting[]> {
   try {
-    const res = await api.get<ApiResponse<LeadFieldSettingResponse[]>>("/lead-field-settings");
-    const settings = fromApi(res.data);
+    const res = await api.get<ApiResponse<LeadFieldSettingsData>>("/lead-field-settings");
+    const settings = fromApi(responseSettings(res.data));
+    if (settings.length === 0) return DEFAULT_LEAD_FIELD_SETTINGS;
     saveLeadFieldSettings(settings);
     return settings;
   } catch {
+    // Keep the last successfully saved configuration usable while the remote
+    // settings read endpoint is temporarily unavailable.
     return getLeadFieldSettings();
   }
 }
 
 export async function updateLeadFieldSettings(settings: LeadFieldSetting[]): Promise<LeadFieldSetting[]> {
-  const res = await api.put<ApiResponse<LeadFieldSettingResponse[]>>("/lead-field-settings", {
-    fields: settings.map((setting) => ({
+  const fields = settings.map((setting) => ({
       key: setting.key,
+      field_key: setting.key,
       active: setting.active,
+      is_active: setting.active,
       required: setting.required,
-    })),
+      is_required: setting.required,
+    }));
+
+  const updateResponse = await api.put<ApiResponse<LeadFieldSettingsData>>("/lead-field-settings", {
+    fields,
+    settings: fields,
   });
-  const saved = fromApi(res.data);
-  saveLeadFieldSettings(saved);
-  return saved;
+
+  let verified = fromApi(responseSettings(updateResponse.data));
+
+  if (verified.length === 0) {
+    try {
+      const verifiedResponse = await api.get<ApiResponse<LeadFieldSettingsData>>(
+        `/lead-field-settings?fresh=${Date.now()}`
+      );
+      verified = fromApi(responseSettings(verifiedResponse.data));
+    } catch {
+      // The update succeeded, but some deployments currently fail while
+      // reading settings. Retain the submitted values until reads recover.
+      saveLeadFieldSettings(settings);
+      return settings;
+    }
+  }
+
+  if (verified.length === 0) {
+    saveLeadFieldSettings(settings);
+    return settings;
+  }
+
+  const verifiedByKey = new Map(verified.map((setting) => [setting.key, setting]));
+  const mismatch = settings.find((setting) => {
+    const saved = verifiedByKey.get(setting.key);
+    return !saved || saved.active !== setting.active || saved.required !== setting.required;
+  });
+
+  if (mismatch) {
+    throw new Error(`The server did not save the setting for ${mismatch.label}. Please check the backend update endpoint.`);
+  }
+
+  saveLeadFieldSettings(verified);
+  return verified;
 }
 
 export async function createLeadFieldSetting(input: {
@@ -145,7 +214,7 @@ export async function createLeadFieldSetting(input: {
 }): Promise<LeadFieldSetting[]> {
   const res = await api.post<ApiResponse<LeadFieldSettingResponse[]>>("/lead-field-settings", {
     label: input.label,
-    field_type: input.type,
+    type: input.type,
     required: input.required,
   });
   const saved = fromApi(res.data);

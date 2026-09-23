@@ -1,19 +1,344 @@
 @import "tailwindcss";
 
+/* The app's theme (dark/light) is an explicit user choice tracked by
+   ThemeProvider via a `.dark`/`.light` class on <html> -- independent of
+   the OS's prefers-color-scheme. Without this, Tailwind v4's default
+   `dark:` variant compiles to a prefers-color-scheme media query, so any
+   `dark:*` utility silently stops matching the app's actual theme
+   whenever the OS preference differs from the in-app choice. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-blue-50: #e9fbf9;
-  --color-blue-100: #d2f6f4;
-  --color-blue-200: #9de8e5;
-  --color-blue-400: #37d0ca;
-  --color-blue-500: #10bdb8;
-  --color-blue-600: #08b9b2;
-  --color-blue-700: #006a68;
-  --color-purple-50: #edf8f7;
-  --color-purple-100: #cdebea;
-  --color-purple-600: #00807d;
-  --color-purple-700: #00615f;
+  /* Mapping dynamic CSS variable colors to Tailwind utilities */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-blue-50: var(--blue-50);
+  --color-blue-100: var(--blue-100);
+  --color-blue-200: var(--blue-200);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+
+  --color-purple-50: var(--purple-50);
+  --color-purple-100: var(--purple-100);
+  --color-purple-600: var(--purple-600);
+  --color-purple-700: var(--purple-700);
+
+  /* UX-WEB-005 / UX-WEB-036: status/alert colors (success, error, warning)
+     follow the same theme-token pattern already used above for blue/purple,
+     so every bg-red-50/bg-green-50/bg-yellow-50-based banner and badge in
+     the app automatically adapts to the active theme instead of needing a
+     per-file .dark override. */
+  --color-red-50: var(--status-red-50);
+  --color-red-100: var(--status-red-100);
+  --color-red-200: var(--status-red-200);
+  --color-red-700: var(--status-red-700);
+  --color-red-800: var(--status-red-800);
+
+  --color-green-50: var(--status-green-50);
+  --color-green-100: var(--status-green-100);
+  --color-green-200: var(--status-green-200);
+  --color-green-700: var(--status-green-700);
+  --color-green-800: var(--status-green-800);
+
+  --color-yellow-50: var(--status-yellow-50);
+  --color-yellow-100: var(--status-yellow-100);
+  --color-yellow-200: var(--status-yellow-200);
+  --color-yellow-700: var(--status-yellow-700);
+  --color-yellow-800: var(--status-yellow-800);
 }
 
+:root {
+  /* Default: DARK THEME (Using requested colors) */
+  /* #091718 - Extreme dark canvas background */
+  --background: #091718;
+  --foreground: #ffffff;
+  
+  /* #0E2123 - Dark surface / Cards / Sidebar */
+  --card: #0E2123;
+  --card-foreground: #ffffff;
+  
+  /* #206B6E - Borders / Accents */
+  --border: #206B6E;
+  
+  /* #0F2224 - Medium dark surface / Inputs */
+  --input: #0F2224;
+  
+  /* #4BC3C4 - Radiant highlight cyan */
+  --primary: #4BC3C4;
+  --primary-foreground: #091718;
+  
+  --ring: #4BC3C4;
+  --muted-text: #88999a;
+
+  /* Re-mapping standard colors for components using Tailwind blue/purple classes */
+  --blue-50: #0F2224;        /* Dark background for active buttons/sidebar item */
+  --blue-100: #206B6E;       /* Muted teal */
+  --blue-200: #4BC3C4;       /* High-contrast cyan */
+  --blue-300: #4BC3C4;
+  --blue-400: #4BC3C4;
+  --blue-500: #4BC3C4;
+  --blue-600: #206B6E;       /* Deep brand teal button */
+  --blue-700: #4BC3C4;       /* Brand cyan for text links */
+
+  --purple-50: #0e2426;
+  --purple-100: #206b6e;
+  --purple-600: #4bc3c4;
+  --purple-700: #ffffff;
+
+  /* Status colors, dark-theme values: readable translucent tints instead of
+     the light-mode pastel fills these banners/badges were hardcoded to. */
+  --status-red-50: rgba(239, 68, 68, 0.1);
+  --status-red-100: rgba(239, 68, 68, 0.16);
+  --status-red-200: rgba(239, 68, 68, 0.3);
+  --status-red-700: #f87171;
+  --status-red-800: #fca5a5;
+
+  --status-green-50: rgba(34, 197, 94, 0.1);
+  --status-green-100: rgba(34, 197, 94, 0.16);
+  --status-green-200: rgba(34, 197, 94, 0.3);
+  --status-green-700: #4ade80;
+  --status-green-800: #86efac;
+
+  --status-yellow-50: rgba(234, 179, 8, 0.1);
+  --status-yellow-100: rgba(234, 179, 8, 0.16);
+  --status-yellow-200: rgba(234, 179, 8, 0.3);
+  --status-yellow-700: #facc15;
+  --status-yellow-800: #fde047;
+}
+
+.light {
+  /* LIGHT THEME (Using requested brand elements in high contrast) */
+  --background: #f4f8f8;
+  --foreground: #091718;
+  
+  --card: #ffffff;
+  --card-foreground: #091718;
+  
+  --border: #d0dedf;
+  --input: #ffffff;
+  
+  /* Use Deep brand teal as primary for readability on light background */
+  --primary: #206B6E;
+  --primary-foreground: #ffffff;
+  
+  --ring: #206B6E;
+  --muted-text: #666666;
+
+  /* Re-mapping standard blue/purple color variables for light mode */
+  --blue-50: #ebf5f5;
+  --blue-100: #cbe2e2;
+  --blue-200: #9de8e5;
+  --blue-300: #4bc3c4;
+  --blue-400: #37d0ca;
+  --blue-500: #206B6E;
+  --blue-600: #206B6E;
+  --blue-700: #006a68;
+
+  --purple-50: #edf8f7;
+  --purple-100: #cdebea;
+  --purple-600: #00807d;
+  --purple-700: #00615f;
+
+  /* Status colors, light theme: identical to Tailwind's own default
+     red/green/yellow scale, so light mode renders exactly as before. */
+  --status-red-50: #fef2f2;
+  --status-red-100: #fee2e2;
+  --status-red-200: #fecaca;
+  --status-red-700: #b91c1c;
+  --status-red-800: #991b1b;
+
+  --status-green-50: #f0fdf4;
+  --status-green-100: #dcfce7;
+  --status-green-200: #bbf7d0;
+  --status-green-700: #15803d;
+  --status-green-800: #166534;
+
+  --status-yellow-50: #fefce8;
+  --status-yellow-100: #fef9c3;
+  --status-yellow-200: #fef08a;
+  --status-yellow-700: #a16207;
+  --status-yellow-800: #854d0e;
+}
+
+/* Global body transitions & styling */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  overflow-x: hidden;
 }
+
+/* Scrollbars custom styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* CSS resets to automatically translate hardcoded Tailwind light classes into dark/light variables */
+.dark .bg-white {
+  background-color: var(--card) !important;
+  color: var(--foreground);
+}
+.dark .bg-white\/70 {
+  background-color: rgba(14, 33, 35, 0.7) !important;
+}
+.dark .bg-white\/90 {
+  background-color: rgba(14, 33, 35, 0.9) !important;
+}
+.dark .bg-white\/95 {
+  background-color: rgba(14, 33, 35, 0.95) !important;
+}
+.dark .bg-gray-50 {
+  background-color: var(--background) !important;
+}
+.dark .bg-gradient-to-br.from-slate-50.via-blue-50.to-slate-50 {
+  background-image: linear-gradient(to bottom right, var(--background), var(--card), var(--background)) !important;
+}
+
+/* Text color adaptations */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-700,
+.dark .text-slate-700 {
+  color: var(--foreground) !important;
+}
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: var(--muted-text) !important;
+}
+
+/* Border and divider overrides */
+.dark .border-gray-200,
+.dark .border-gray-100,
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: var(--border) !important;
+}
+.dark .divide-gray-100 > * + *,
+.dark .divide-gray-200 > * + * {
+  border-color: var(--border) !important;
+}
+
+/* Inputs and Forms adaptation */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea,
+.dark .bg-slate-50 {
+  background-color: var(--input) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus,
+.dark .focus\:bg-white:focus {
+  background-color: var(--input) !important;
+  border-color: var(--primary) !important;
+  outline: none !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #666666 !important;
+}
+
+/* Browser autofill (saved email/password) paints its own background via an
+   internal UA layer that a plain `background-color`, even with !important,
+   cannot override -- it has to be beaten with this inset box-shadow trick.
+   Without it, an autofilled field stays white/pale-blue even in dark theme
+   while every other input on the same form is correctly themed. */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0px 1000px var(--input) inset;
+  box-shadow: 0 0 0px 1000px var(--input) inset;
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Outer layout bg overrides */
+.dark .bg-\[\#f7fbfb\] {
+  background-color: var(--background) !important;
+}
+
+
+/* Override background colors of tables */
+.dark table {
+  background-color: var(--card) !important;
+}
+.dark thead {
+  background-color: var(--input) !important;
+}
+.dark tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Dark theme hover state fixes for list links, rows, and cards */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark [class*="hover:bg-teal-50"]:hover,
+.dark [class*="hover:bg-blue-50"]:hover,
+.dark [class*="hover:from-orange-50"]:hover,
+.dark [class*="hover:from-blue-50"]:hover {
+  background-color: var(--input) !important;
+  background-image: none !important;
+}
+
+/* List header gradient adaptations in dark mode */
+.dark .bg-gradient-to-r.from-blue-50.to-cyan-50,
+.dark .bg-gradient-to-r.from-orange-50.to-red-50,
+.dark .bg-gradient-to-r.from-orange-50\/50.to-red-50\/50,
+.dark .bg-gradient-to-r.from-blue-50\/50.to-cyan-50\/50,
+.dark .bg-gradient-to-br.from-blue-50.to-cyan-50,
+.dark .bg-gradient-to-br.from-green-50.to-emerald-50,
+.dark .bg-gradient-to-br.from-purple-50.to-pink-50,
+.dark .bg-gradient-to-br.from-red-50.to-orange-50,
+.dark .bg-gradient-to-r.from-red-50.to-orange-50 {
+  background-image: linear-gradient(to right, var(--input), var(--card)) !important;
+  border-color: var(--border) !important;
+}
+
+/* Slide-out drawer background override in dark mode */
+.dark .bg-gradient-to-b.from-white.to-gray-50,
+.dark .bg-gradient-to-br.from-white.to-gray-50 {
+  background-image: none !important;
+  background-color: var(--card) !important;
+}
+
+/* Smooth visual highlights on interactions */
+a, button {
+  transition: all 0.2s ease-in-out;
+}
+
+

@@ -246,3 +246,150 @@ export interface PlatformUserListRow {
 }
 
 export type PlatformUserDetail = PlatformUserListRow;
+
+export interface Client {
+  id: number;
+  name: string;
+  slug: string;
+  status: "active" | "suspended";
+  users_count: number;
+  leads_count: number;
+  users?: User[];
+}
+
+// Phase 2 Foundation: Super Admin audit-log reader (GET /audit-logs).
+export interface AuditLogEntry {
+  id: number;
+  action: string;
+  module: string;
+  subject_type: string | null;
+  subject_id: number | null;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  ip_address: string | null;
+  actor: { id: number; name: string; email: string } | null;
+  client: { id: number; name: string } | null;
+  created_at: string;
+}
+
+export interface AuditLogListResponse {
+  success: boolean;
+  data: AuditLogEntry[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+// Phase 4 (Billing, Plans & Subscription Control Center).
+export interface PlanRecord {
+  id: number;
+  name: string;
+  slug: string;
+  price: string | number;
+  billing_cycle: "monthly" | "yearly";
+  seat_limit: number | null;
+  features: Record<string, boolean> | string[] | null;
+  status: "active" | "inactive";
+  active_subscriptions_count?: number;
+  trial_subscriptions_count?: number;
+  cancelled_subscriptions_count?: number;
+  total_subscriptions_count?: number;
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  meta: { current_page: number; per_page: number; total: number; last_page: number };
+}
+
+// Super Admin Security Center (Phase 2 frontend, backed by the Phase 1
+// backend: GET /admin/security-center/overview and .../auth-events).
+// Every field here mirrors the backend contract exactly — nothing here
+// is a score, a percentage, or an inferred risk level; see
+// OGCLIENT-SUPERADMIN-SECURITY-CENTER-PHASE1-REPORT.md for the backend
+// side of this contract.
+export type AuthEventType =
+  | "login_success"
+  | "login_failed"
+  | "logout"
+  | "password_reset_requested"
+  | "password_reset_succeeded"
+  | "password_reset_failed";
+
+export type AuthEventResult = "success" | "failure";
+
+export interface SecurityRateLimitStatus {
+  enabled: boolean;
+  max_attempts: number;
+  decay_minutes: number;
+}
+
+export interface SecurityOverviewData {
+  period: { from: string; to: string };
+  authentication: {
+    login_success_count: number;
+    login_failed_count: number;
+    logout_count: number;
+    password_reset_requested_count: number;
+    password_reset_succeeded_count: number;
+    password_reset_failed_count: number;
+  };
+  sessions: { active_count: number };
+  audit_activity: { recent_count: number };
+  backups: {
+    latest: { status: string; created_at: string; triggered_via: string | null } | null;
+  };
+  rate_limiting: {
+    login: SecurityRateLimitStatus;
+    password_reset_request: SecurityRateLimitStatus;
+    password_reset_attempt: SecurityRateLimitStatus;
+    trial_signup: SecurityRateLimitStatus;
+  };
+  security_headers: {
+    x_content_type_options: boolean;
+    x_frame_options: boolean;
+    referrer_policy: boolean;
+    permissions_policy: boolean;
+    strict_transport_security: string;
+  };
+  health: { up: boolean; database: boolean };
+}
+
+export interface SecurityAuthEvent {
+  id: number;
+  event: AuthEventType;
+  result: AuthEventResult;
+  failure_reason: string | null;
+  login_identifier: string | null;
+  ip_address: string | null;
+  user: { id: number; name: string; email: string } | null;
+  client: { id: number; name: string } | null;
+  created_at: string;
+}
+
+export interface SecurityAuthEventListResponse {
+  success: boolean;
+  data: SecurityAuthEvent[];
+  meta: { current_page: number; per_page: number; total: number; last_page: number };
+}
+
+// Reused from Security Workstream D (per-user session visibility) — the
+// Security Center's own "your active sessions" panel calls this for the
+// signed-in Super Admin's own account rather than any new endpoint.
+export interface SecuritySession {
+  id: number;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  status: "active" | "expired";
+  is_current: boolean;
+}
+
+export interface SecuritySessionListResponse {
+  success: boolean;
+  data: SecuritySession[];
+}

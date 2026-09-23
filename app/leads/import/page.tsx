@@ -125,12 +125,28 @@ export default function LeadImportUploadPage() {
               Upload a spreadsheet to bulk-add leads. You&apos;ll map columns and review everything before anything is created.
             </p>
           </div>
-          <Link
-            href={isSuperAdmin && clientId ? `/leads/import/history?client_id=${clientId}` : "/leads/import/history"}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-input/60"
-          >
-            <FaHistory className="h-3.5 w-3.5" /> Import History
-          </Link>
+          {isSuperAdmin && !clientId ? (
+            // Same guard as the upload button below: a super_admin has no
+            // tenant of their own, so without a selection there is no
+            // client_id to send and the history endpoint would 422. Rather
+            // than let the click through to a page that's certain to fail,
+            // disable it here — never invent or silently pick a tenant.
+            <button
+              type="button"
+              disabled
+              title="Select a client tenant first"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FaHistory className="h-3.5 w-3.5" /> Import History
+            </button>
+          ) : (
+            <Link
+              href={isSuperAdmin && clientId ? `/leads/import/history?client_id=${clientId}` : "/leads/import/history"}
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-input/60"
+            >
+              <FaHistory className="h-3.5 w-3.5" /> Import History
+            </Link>
+          )}
         </div>
 
         {isSuperAdmin && (
